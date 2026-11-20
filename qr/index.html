@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Códigos QR — Pokédex</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #eaefff; color: #202638; margin: 0; padding: 24px }
+  h1 { margin: 0 0 4px } p.s { margin: 0 0 24px; color: #64748b }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px }
+  .c { background: #fff; border-radius: 20px; padding: 16px; text-align: center; box-shadow: 0 8px 24px #0001; break-inside: avoid }
+  .c img, .c canvas { max-width: 100%; height: auto }
+  .c b { display: block; margin-top: 8px } .c small { color: #64748b; display: block }
+  .c a { display: inline-block; margin-top: 10px; font-size: 13px; color: #ef5350; font-weight: 700; cursor: pointer; text-decoration: none }
+  @media print { a { display: none !important } body { background: #fff } }
+</style>
+</head>
+<body>
+  <h1>Códigos QR de prueba</h1>
+  <p class="s">Escanéalos desde la Pokédex. También puedes imprimir esta página (Ctrl + P).</p>
+  <div id="grid"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const POKEMON = [[1, 'Bulbasaur'], [4, 'Charmander'], [7, 'Squirtle'], [25, 'Pikachu'], [39, 'Jigglypuff'],
+                     [52, 'Meowth'], [94, 'Gengar'], [133, 'Eevee'], [150, 'Mewtwo'], [151, 'Mew']];
+
+    POKEMON.forEach(([id, nombre]) => {
+      const tarjeta = document.createElement('div');
+      tarjeta.className = 'c';
+      const qr = document.createElement('div');
+      tarjeta.append(qr);
+      new QRCode(qr, { text: `pokemon:${id}`, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      tarjeta.insertAdjacentHTML('beforeend', `<b>#${id} ${nombre}</b><small>pokemon:${id}</small>`);
+
+      const enlace = document.createElement('a');
+      enlace.textContent = 'Descargar PNG';
+      enlace.href = '#';
+      enlace.onclick = () => {
+        enlace.href = qr.querySelector('canvas').toDataURL('image/png');
+        enlace.download = `pokemon-${id}-${nombre.toLowerCase()}.png`;
+      };
+      tarjeta.append(enlace);
+      document.getElementById('grid').append(tarjeta);
+    });
+  </script>
+</body>
+</html>

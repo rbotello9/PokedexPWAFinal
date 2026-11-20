@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pokédex — Kanto</title>
+<meta name="theme-color" content="#ef5350">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>document.documentElement.classList.toggle('dark', (localStorage.getItem('tema') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark')</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tema ===== */
+  :root { --bg:#eaefff; --tx:#202638; --card:#fff; --card2:#f8fafc; --bd:#f1f5f9; --mut:#94a3b8; --soft:#64748b; --dot:#101827 }
+  .dark { --bg:#0e1424; --tx:#e8ecf6; --card:#182036; --card2:#212b45; --bd:#28334f; --mut:#7f8aa6; --soft:#a3adc4; --dot:#ffffff33 }
+
+  /* ===== Base ===== */
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--tx) }
+  h1,h2,h3,.f { font-family:'Outfit',sans-serif }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:24px; box-shadow:0 12px 35px #0000000f }
+  .c2 { background:var(--card2) } .mut { color:var(--mut) } .soft { color:var(--soft) }
+  .dots { background-image:radial-gradient(var(--dot) 1px,transparent 1px); background-size:13px 13px }
+  .lock { filter:brightness(0); opacity:.13 } .dark .lock { filter:brightness(0) invert(1); opacity:.14 }
+  .track { height:8px; border-radius:99px; background:var(--bd); overflow:hidden } .track i { display:block; height:100%; border-radius:99px }
+  .moon { display:inline } .sun { display:none } .dark .moon { display:none } .dark .sun { display:inline }
+  .btn { border-radius:16px; padding:14px; font:800 14px 'DM Sans'; flex:1 } .btn-pri { background:#ef5350; color:#fff } .btn-sec { background:var(--card2); color:var(--tx) }
+
+  /* ===== Tipos (cada uno define su color --c en RGB) ===== */
+  .t-normal{--c:120,130,146} .t-fire{--c:237,116,76} .t-water{--c:75,145,212} .t-electric{--c:196,147,24} .t-grass{--c:77,155,77} .t-ice{--c:90,190,200}
+  .t-fighting{--c:200,70,60} .t-poison{--c:154,98,189} .t-ground{--c:190,140,70} .t-flying{--c:120,150,220} .t-psychic{--c:235,90,140} .t-bug{--c:130,170,40}
+  .t-rock{--c:160,145,100} .t-ghost{--c:110,100,170} .t-dragon{--c:80,90,210} .t-fairy{--c:230,120,180} .t-steel{--c:110,140,160} .t-dark{--c:100,90,90}
+  .badge { background:rgba(var(--c),.18); color:rgb(var(--c)); border-radius:99px; font:800 9px 'DM Sans'; padding:4px 8px; white-space:nowrap }
+  .tint { background:rgba(var(--c),.15); color:rgb(var(--c)) }
+
+  /* ===== Navegación ===== */
+  .nav button { display:flex; flex-direction:column; align-items:center; padding:8px 18px; border-radius:14px; font:700 11px 'DM Sans'; color:var(--mut) }
+  .nav button.on { color:#ef5350; background:var(--bd) }
+
+  /* ===== Escáner (pantalla completa) ===== */
+  .overlay { position:fixed; inset:0; z-index:60; display:none; flex-direction:column; background:#202b40; color:#fff; padding:calc(16px + env(safe-area-inset-top)) 20px 24px }
+  .overlay.open { display:flex }
+  #reader { width:100%; max-width:340px; margin:0 auto; border-radius:28px; overflow:hidden; border:2px solid #ef5350; background:#172235; min-height:260px }
+  #reader video { object-fit:cover }
+
+  /* ===== Bottom Sheet ===== */
+  .sheet { position:fixed; inset:0; z-index:65; pointer-events:none }
+  .sheet.open { pointer-events:auto }
+  .sheet-bg { position:absolute; inset:0; background:#0009; opacity:0; transition:opacity .25s }
+  .sheet.open .sheet-bg { opacity:1 }
+  .sheet-panel { position:absolute; left:0; right:0; bottom:0; margin:0 auto; max-width:480px; max-height:90vh; overflow:auto; background:var(--card); border-radius:28px 28px 0 0; padding:12px 20px calc(24px + env(safe-area-inset-bottom)); transform:translateY(100%); transition:transform .3s ease }
+  .sheet.open .sheet-panel { transform:none }
+  .grab { width:44px; height:5px; border-radius:9px; background:var(--bd); margin:0 auto 14px }
+
+  /* ===== Toast y cargando ===== */
+  .toast { position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); z-index:80; max-width:90%; transform:translate(-50%,20px); opacity:0; pointer-events:none; transition:.25s; padding:12px 18px; border-radius:16px; color:#fff; font:700 13px 'DM Sans'; text-align:center; box-shadow:0 10px 30px #0004; background:#27344b }
+  .toast.show { opacity:1; transform:translate(-50%,0) } .toast.error { background:#d94441 } .toast.ok { background:#2e9d62 }
+  .spin { width:38px; height:38px; border-radius:50%; border:4px solid var(--bd); border-top-color:#ef5350; animation:giro .8s linear infinite }
+  @keyframes giro { to { transform:rotate(360deg) } }
+</style>
+</head>
+
+<body class="pb-28">
+
+<!-- ================= ENCABEZADO ================= -->
+<header class="sticky top-0 z-30 flex items-center justify-between border-b px-6 py-4 backdrop-blur-xl" style="background:color-mix(in srgb,var(--bg) 85%,transparent);border-color:var(--bd);padding-top:max(16px,env(safe-area-inset-top))">
+  <div class="f text-lg font-extrabold">POKÉDEX<span class="text-red-500">.</span> <span class="mut text-[10px] tracking-widest">KANTO</span></div>
+  <button data-act="tema" class="card c2 h-10 w-10 !rounded-full text-lg" aria-label="Cambiar tema"><span class="moon">🌙</span><span class="sun">☀️</span></button>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 pt-7">
+
+  <!-- ===== Vista: Mi Pokédex ===== -->
+  <section id="view-pokedex" class="view space-y-5">
+    <div>
+      <p class="text-[10px] font-extrabold tracking-widest text-red-500">TU AVENTURA COMIENZA AQUÍ</p>
+      <h1 class="f text-4xl font-extrabold">Mi Pokédex</h1>
+      <p class="soft text-sm">Todos tus descubrimientos de Kanto.</p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-[1.5fr_1fr]">
+      <div class="rounded-3xl bg-[#27344b] p-6 text-white">
+        <p class="text-xs font-bold tracking-widest text-white/50">PROGRESO DE COLECCIÓN</p>
+        <div class="f mt-2 text-4xl font-extrabold"><span data-bind="pct">0</span>%</div>
+        <div class="mt-4 flex justify-between text-[10px] font-bold text-white/60"><span>Tu colección</span><span><span data-bind="count">0</span> / 151 Pokémon</span></div>
+        <div class="mt-2 h-2 rounded-full bg-white/15"><div class="h-full rounded-full bg-red-400 transition-all" data-bar></div></div>
+      </div>
+      <div class="card flex items-center justify-between p-5">
+        <div>
+          <p class="mut text-xs font-bold tracking-widest">SIGUIENTE OBJETIVO</p>
+          <h3 class="f mt-2 text-xl font-extrabold">Completa Kanto</h3>
+          <span class="mt-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-extrabold text-orange-500"><span data-bind="pending">151</span> por descubrir</span>
+        </div>
+        <div class="text-5xl">🏆</div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <h2 class="f text-xl font-extrabold">Pokémon capturados</h2>
+      <span class="card c2 soft !rounded-full px-3 py-1.5 text-[11px] font-bold"><span data-bind="pad">00</span> encontrados</span>
+    </div>
+
+    <!-- Estado vacío -->
+    <div id="vacio" class="card hidden px-6 py-10 text-center">
+      <div class="text-5xl">📘</div>
+      <h3 class="f mt-3 text-lg font-extrabold">Tu Pokédex está vacía</h3>
+      <p class="soft mx-auto mt-1 max-w-xs text-sm">Escanea tu primer código QR para comenzar tu aventura.</p>
+    </div>
+    <div id="capturados" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"></div>
+
+    <div class="flex items-end justify-between pt-4">
+      <h2 class="f text-xl font-extrabold">Aún por descubrir</h2>
+      <span class="mut text-[11px] font-bold"><span data-bind="pending">151</span> restantes</span>
+    </div>
+    <div id="bloqueados" class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"></div>
+  </section>
+
+  <!-- ===== Vista: Progreso ===== -->
+  <section id="view-progreso" class="view hidden">
+    <p class="text-[10px] font-extrabold tracking-widest text-red-500">TU RECORRIDO</p>
+    <h2 class="f mb-4 text-3xl font-extrabold">Progreso</h2>
+    <div class="card flex flex-col items-center gap-6 p-7 sm:flex-row">
+      <div id="donut" class="flex h-40 w-40 shrink-0 items-center justify-center rounded-full">
+        <div class="flex h-32 w-32 flex-col items-center justify-center rounded-full" style="background:var(--card)">
+          <span class="f text-3xl font-extrabold"><span data-bind="pct">0</span>%</span><span class="mut text-[10px] font-bold">COMPLETADO</span>
+        </div>
+      </div>
+      <div class="w-full flex-1">
+        <p class="mut text-xs font-bold tracking-widest">POKÉMON CAPTURADOS</p>
+        <h3 class="f text-3xl font-extrabold"><span data-bind="count">0</span> <span class="mut text-lg">/ 151</span></h3>
+        <div class="track mt-4"><i class="bg-red-500 transition-all" data-bar></i></div>
+        <div class="mt-6 grid grid-cols-3 gap-2 text-center">
+          <div><p class="f text-2xl font-extrabold" data-bind="pad">00</p><p class="mut text-[10px] font-bold">Capturados</p></div>
+          <div><p class="f text-2xl font-extrabold" data-bind="pending">151</p><p class="mut text-[10px] font-bold">Pendientes</p></div>
+          <div><p class="f text-2xl font-extrabold">151</p><p class="mut text-[10px] font-bold">Total Kanto</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Vista: Acerca de ===== -->
+  <section id="view-acerca" class="view hidden">
+    <p class="text-[10px] font-extrabold tracking-widest text-red-500">CONÓCENOS</p>
+    <h2 class="f mb-4 text-3xl font-extrabold">Acerca de</h2>
+    <div class="card p-6">
+      <h3 class="f text-xl font-extrabold">Pokédex PWA</h3>
+      <p class="soft mt-2 text-sm leading-6">Aplicación web progresiva inspirada en la Pokédex de Kanto. Registra Pokémon escaneando códigos QR y guarda tu colección en este dispositivo.</p>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2">
+        <div class="c2 rounded-2xl p-4"><p class="mut text-[10px] font-extrabold">TECNOLOGÍAS</p><p class="soft mt-1 text-xs font-bold">HTML · JavaScript · Tailwind CSS</p></div>
+        <div class="c2 rounded-2xl p-4"><p class="mut text-[10px] font-extrabold">FUENTE DE DATOS</p><p class="soft mt-1 text-xs font-bold">PokéAPI</p></div>
+      </div>
+      <p class="mut mt-5 border-t pt-4 text-center text-[10px] font-bold tracking-widest" style="border-color:var(--bd)">EQUIPO</p>
+      <p class="f text-center font-extrabold">Rene Botello - Juan Carlos Del Rio - Kristina Rodriguez - Gael Solis</p>
+    </div>
+  </section>
+</main>
+
+<!-- ================= NAVEGACIÓN INFERIOR ================= -->
+<div class="fixed inset-x-0 bottom-0 z-40 border-t px-3 pt-2 backdrop-blur-xl" style="background:color-mix(in srgb,var(--bg) 90%,transparent);border-color:var(--bd);padding-bottom:max(8px,env(safe-area-inset-bottom))">
+  <nav class="nav mx-auto flex max-w-lg justify-around">
+    <button data-view="pokedex" class="on">▦ Pokédex</button><button data-view="progreso">◔ Progreso</button><button data-view="acerca">ⓘ Acerca de</button>
+  </nav>
+</div>
+
+<!-- ================= FAB ================= -->
+<button data-act="escanear" aria-label="Escanear código QR" class="fixed bottom-24 right-5 z-40 flex h-14 items-center gap-2 rounded-full bg-red-500 px-5 text-sm font-extrabold text-white shadow-xl shadow-red-500/30 sm:bottom-8 sm:right-8">📷 Escanear</button>
+
+<!-- ================= ESCÁNER QR ================= -->
+<div id="scanner" class="overlay">
+  <div class="mb-5 flex items-center justify-between">
+    <h2 class="f text-xl font-extrabold">Escanear Pokémon</h2>
+    <button data-act="cerrar-scan" class="h-10 w-10 rounded-full bg-white/10 text-lg" aria-label="Cerrar escáner">✕</button>
+  </div>
+  <div id="reader"></div>
+  <p id="estado-cam" class="mt-5 text-center text-xs text-white/60">Iniciando cámara...</p>
+  <div id="err-cam" class="mx-auto mt-5 hidden max-w-xs rounded-2xl bg-white/10 p-4 text-center">
+    <p id="err-cam-txt" class="text-sm font-bold"></p>
+    <button data-act="reintentar" class="mt-3 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-extrabold">Reintentar</button>
+  </div>
+  <div class="mx-auto mt-auto max-w-xs rounded-2xl bg-white/10 p-4 text-center">
+    <p class="text-xs font-bold">¿Cómo capturar?</p>
+    <p class="mt-1 text-[11px] leading-5 text-white/50">Coloca el código QR de un Pokémon frente a la cámara. Si no se lee, acércalo o busca más luz.</p>
+  </div>
+</div>
+
+<!-- ================= BOTTOM SHEET ================= -->
+<div id="sheet" class="sheet">
+  <div class="sheet-bg" data-act="cancelar"></div>
+  <div class="sheet-panel"><div class="grab"></div><div id="sheet-body"></div></div>
+</div>
+
+<!-- ================= TOAST ================= -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
